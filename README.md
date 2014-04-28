@@ -3,6 +3,12 @@ LGCA
 
 Adsorption Isotherm and Kinetics Emulation with Lattice Gas Cellular Automata:
 
+![alt tag](https://cloud.githubusercontent.com/assets/7380988/2815344/b849f168-ceb8-11e3-8aab-fcfed0dc8d3a.png)
+
+![alt tag](https://cloud.githubusercontent.com/assets/7380988/2815357/e05f0d50-ceb8-11e3-975b-b1c30d80d78e.png)
+
+![alt tag](https://cloud.githubusercontent.com/assets/7380988/2815366/f02dc4f6-ceb8-11e3-8da3-15cdbc6f0c72.png)
+
 Adsorption phenomena are increasingly utilized to perform separation processes, adsorption chilling, hydrogen driven vehicle and more recently gas storage. The physical adsorption process occurs mainly within the pores of the external adsorbent surface due to van der Waals force field. The amount of adsorbate uptake depends on the nature of adsorbates and the porous adsorbent structure. For higher adsorptive capacity, the adsorbents should have a high surface area and/or high micropore volume, with an optimum pore width distribution that spans from super micropore to mesopores. However, the porous medium is naturally associated with very small pores and adsorbate molecules have to find their way to the interior surface area or micropore volume. This path-finding gives rise to the so-called diffusional resistance towards molecular flow within scope of adsorption kinetics.
 
 Lattice Gas Cellular Automata (LGCA), as a fluid dynamic simulation method that is conceptually simple, can be applied to deal with thermal interface effects to a wide array of boundary conditions. Based on LGM, lattice Boltzmann Method (LBM) has been successfully used to model a number of typical fluid dynamic problems within macroscope. In this project, however, we extend LGM into microscopic scale to deal with surface adsorption problems including its isotherm and kinetics.
