@@ -23,26 +23,26 @@ To express the evolution, 6 bit digit is used:
 	
 Construct 2D porous network structure of adsorbent material surface: 
 
-        Parameters corresponding to pore width and/or volume distribution
+ Parameters corresponding to pore width and/or volume distribution
 
-        Reflect nano-porous structure of activated carbon, zeolite, etc.
+ Reflect nano-porous structure of activated carbon, zeolite, etc.
 	
 Implement lattice gas fluid CA model which incorporates: 
         
-        Local rules of lattice gas collision and movement
+ Local rules of lattice gas collision and movement
 
-        Periodic space boundary conditions
+ Periodic space boundary conditions
 
-        Issues regarding to hexagonal grids topology and geometry (6 bit digit and hexagonal, rule space will be 6^6)
+ Issues regarding to hexagonal grids topology and geometry (6 bit digit and hexagonal, rule space will be 6^6)
 	
 Defining local rules of lattice gas interaction with material surface boundaries:
 
-        Probabilistic adsorption of lattice gas (adsorption potential with relation to temperature) onto different surface boundary conditions (1~6 walls)
+ Probabilistic adsorption of lattice gas (adsorption potential with relation to temperature) onto different surface boundary conditions (1~6 walls)
 
-        Diffusion resistence onto LGM within porous surface structures*
+ Diffusion resistence onto LGM within porous surface structures*
 	
 Visualize the LGCA emulation result:
 
-        Relationship between the uptake of LG onto the surface and the initilized LG density, this corresponds to adsorption isotherm
+ Relationship between the uptake of LG onto the surface and the initilized LG density, this corresponds to adsorption isotherm
 	
-        Dependence of the uptake of LG on the LGCA running steps, this reflects the adsorption kinetics
+ Dependence of the uptake of LG on the LGCA running steps, this reflects the adsorption kinetics
