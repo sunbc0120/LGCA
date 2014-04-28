@@ -1,7 +1,7 @@
 LGCA
 ====
 
-Adsorption Isotherm and Kinetics Emulation with Lattice Gas Cellular Automata
+Adsorption Isotherm and Kinetics Emulation with Lattice Gas Cellular Automata:
 
 Adsorption phenomena are increasingly utilized to perform separation processes, adsorption chilling, hydrogen driven vehicle and more recently gas storage. The physical adsorption process occurs mainly within the pores of the external adsorbent surface due to van der Waals force field. The amount of adsorbate uptake depends on the nature of adsorbates and the porous adsorbent structure. For higher adsorptive capacity, the adsorbents should have a high surface area and/or high micropore volume, with an optimum pore width distribution that spans from super micropore to mesopores. However, the porous medium is naturally associated with very small pores and adsorbate molecules have to find their way to the interior surface area or micropore volume. This path-finding gives rise to the so-called diffusional resistance towards molecular flow within scope of adsorption kinetics.
 
