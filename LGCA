@@ -1,0 +1,636 @@
+tovector[x_] := Through[{Re,Im}[Exp[I Pi/3 x]]];(*convert digit into 6 directions of hexagonal*)
+
+rotate6bit:=Function[Mod[6#,6^6]+Quotient[#,6^5]];(*rotate the direction of 6 bit digit by 60^o*)
+
+gastodirection6bit[x_]:=Flatten[6-Position[IntegerDigits[x,6,6],1]];(*find gas direction digit*)
+walltodirection6bit[x_]:=Flatten[6-Position[IntegerDigits[x,6,6],2]];(*find surface direction digit*)
+wallInctodirection6bit[x_]:=Flatten[6-Position[IntegerDigits[x,6,6],3]];(*find direction of gas comes onto the wall digit*)
+walladsbedtodirection6bit[x_]:=Flatten[6-Position[IntegerDigits[x,6,6],4]];(*find direction of gas adsorbed digit*)
+adsbedInctodirection6bit[x_]:=Flatten[6-Position[IntegerDigits[x,6,6],5]];(*find direction of gas onto the adsorbed particle digit*)
+
+(*Graphically illustrate rule space*)
+(*Black point for empty
+  Black Arrow for lattice gas movement
+  Orange Dashed line for wall
+  Blue Arrow for gas onto wall
+  Blue Point for gas adsorbed
+ *)
+wallSunPlot6bit[Rule[Verbatim[Condition][preStep_Integer,_], nextStep_Integer], opts___:Null] :=
+	wallSunPlot6bit[preStep->nextStep,opts] 
+
+wallSunPlot6bit[preStep_Integer->nextStep_Integer,opts___:Null]:=
+Graphics[{
+	{
+	{AbsolutePointSize[6],(*GrayLevel[.3],*)Point[{0,0}]},
+	{AbsolutePointSize[6],GrayLevel[.6],(Point[tovector[#]]&/@Range[5,0,-1])},
+	(Arrow[{-#,-0.1#}])&/@tovector/@gastodirection6bit[preStep],
+	{Orange,Dashed,AbsoluteThickness[3],
+		Line[.5{(#-.5{-#[[2]],#[[1]]}),(#-.5{#[[2]],-#[[1]]})}]&/@tovector/@walltodirection6bit[preStep]},
+	{{{Orange,Dashed,AbsoluteThickness[3],
+		Line[.5{(#-.5{-#[[2]],#[[1]]}),(#-.5{#[[2]],-#[[1]]})}]},
+		{Blue,Arrow[{-#,-0.1#}]}}&/@tovector/@wallInctodirection6bit[preStep]},
+	{{{Orange,Dashed,AbsoluteThickness[3],
+		Line[.5{(#-.5{-#[[2]],#[[1]]}),(#-.5{#[[2]],-#[[1]]})}]},
+		{AbsolutePointSize[7],Blue,Point[{0,0}]}}&/@tovector/@walladsbedtodirection6bit[preStep]},
+	{{{Orange,Dashed,AbsoluteThickness[3],
+		Line[.5{(#-.5{-#[[2]],#[[1]]}),(#-.5{#[[2]],-#[[1]]})}]},
+		{AbsolutePointSize[7],Blue,Point[{0,0}]},
+		{Blue,Arrow[{-#,-0.1#}]}}&/@tovector/@adsbedInctodirection6bit[preStep]}
+	},
+	{
+ {AbsolutePointSize[6],Point[{2.5,0}]},
+ {AbsolutePointSize[6],GrayLevel[.6],(Point[{2.5,0}+tovector[#]]&/@Range[5,0,-1])},
+	(Arrow[{{2.5,0},{2.5,0}+0.9#}])&/@tovector/@gastodirection6bit[nextStep],
+	{Orange,Dashed,AbsoluteThickness[3],
+		Line[.5{{5,0}+(#-.5{-#[[2]],#[[1]]}),
+		({5,0}+#-.5{#[[2]],-#[[1]]})}]&/@tovector/@walltodirection6bit[nextStep]},
+{Orange,Dashed,AbsoluteThickness[3],
+		Line[.5{{5,0}+(#-.5{-#[[2]],#[[1]]}),
+		({5,0}+#-.5{#[[2]],-#[[1]]})}]&/@tovector/@wallInctodirection6bit[nextStep]},
+{{{Orange,Dashed,AbsoluteThickness[3],
+		Line[.5{{5,0}+(#-.5{-#[[2]],#[[1]]}),({5,0}+#-.5{#[[2]],-#[[1]]})}]},
+		{AbsolutePointSize[7],Blue,Point[{2.5,0}]}}&/@tovector/@walladsbedtodirection6bit[nextStep]},
+{{{Orange,Dashed,AbsoluteThickness[3],
+		Line[.5{{5,0}+(#-.5{-#[[2]],#[[1]]}),({5,0}+#-.5{#[[2]],-#[[1]]})}]},
+		{AbsolutePointSize[7],Blue,Point[{2.5,0}]},
+		{Blue,Arrow[{{2.5,0},{2.5,0}+0.9#}]}}&/@tovector/@adsbedInctodirection6bit[nextStep]}
+	}
+
+},
+opts,AspectRatio->Automatic,Frame->True,FrameTicks->False,PlotRange->{{-1.5,4},{-2,2}}]
+
+toArrow6bit[type_, coords_] := 
+	(Arrow[{coords, coords} + 0.4{0.1#,#}])&/@tovector/@gastodirection6bit[type];
+(*find gas particle direction*)
+
+toWall6bit[type_,coords_]:=
+    {Orange,AbsoluteThickness[1],
+		Line[{coords,coords} + .51{#,#} + .3{{-#[[2]],#[[1]]},{#[[2]],-#[[1]]}}]
+&/@tovector/@walltodirection6bit[type]};
+(*find surface wall direction*)
+
+toWallInc6bit[type_,coords_]:={{{Orange,AbsoluteThickness[1],
+		Line[{coords,coords} + .5{#,#} + .3{{-#[[2]],#[[1]]},{#[[2]],-#[[1]]}}]},
+{Blue,Arrow[{coords, coords} + 0.4{0.1#,#}]}}&/@tovector/@wallInctodirection6bit[type]};
+(*find gas onto surface direction*)
+
+toWallAdsorbed6bit[type_,coords_]:={{{Orange,AbsoluteThickness[1],
+		Line[{coords,coords} + .5{#,#} + .3{{-#[[2]],#[[1]]},{#[[2]],-#[[1]]}}]},
+{AbsolutePointSize[7],Blue,Point[coords]}}&/@tovector/@walladsbedtodirection6bit[type]};
+(*find gas adsorbed direction*)
+
+toAdsbedInc6bit[type_,coords_]:={{{Orange,AbsoluteThickness[1],
+		Line[{coords,coords} + .5{#,#} + .3{{-#[[2]],#[[1]]},{#[[2]],-#[[1]]}}]},
+		{AbsolutePointSize[7],Blue,Point[coords]},
+		{Blue,Arrow[{coords, coords} + 0.4{0.1#,#}]}}&/@tovector/@adsbedInctodirection6bit[type]};
+(*find gas particle onto the adsorbed direction*)
+
+(*Graghically illustrate evoluation process*)
+freeFluid6bit[latticeGas_?MatrixQ]:=
+	Graphics[{Arrowheads[Small],
+		MapIndexed[
+			With[
+				{coords = {Mod[Last[#2]-First[#2]/2,Length@First@latticeGas],-.9*(First[#2]-1)}},
+				{
+					{AbsolutePointSize[2],GrayLevel[0.5],Point[coords]},
+					toArrow6bit[#, coords],
+					toWall6bit[#,coords],
+					toWallInc6bit[#,coords],
+					toWallAdsorbed6bit[#,coords],
+					toAdsbedInc6bit[#,coords]
+				}
+			]&,
+		latticeGas,
+		{2}
+	]},
+(*ImageSize\[Rule]All,*)
+PlotRange->{{-1,Length[First@latticeGas]+1},{-Length@latticeGas+1,1}},
+AspectRatio->Automatic,
+Frame->True,
+FrameTicks->False
+]
+
+(*lattice gas paritcle collision, movement, and adsorption rules for up to 1 wall surface only*)
+
+(*empty*)
+rule[0]={0->0};
+
+(*collision & movement of lattice gas*)
+rule[1]=(Thread[#->#]&)/@Table[i,{i,6^Range[0,5]}];
+
+rule[2]=Join[(Thread[#->#]&)[NestList[rotate6bit,7,5]],
+(Thread[#->#]&)[NestList[rotate6bit,6^4+1,5]],
+(#->rotate6bit[#])&/@NestList[rotate6bit,6^3+1,2]];
+
+rule[3]=Join[Thread[#->#]&[NestList[rotate6bit,43,5]],
+Thread[NestList[rotate6bit,7993,5]->NestList[rotate6bit,9078,5]],
+Thread[NestList[rotate6bit,223,5]->NestList[rotate6bit,7818,5]],
+Thread[NestList[rotate6bit,7998,1]->NestList[rotate6bit,1333,1]]];
+
+rule[4]=Join[(Thread[#->#]&)[NestList[rotate6bit,259,5]],
+(Thread[#->#]&)[NestList[rotate6bit,1339,5]],
+Thread[NestList[rotate6bit,9114,2]->NestList[rotate6bit,8029,2]]];
+
+rule[5]=(Thread[#->#]&)[9331-6^Range[0,5]];
+
+rule[6]={9331->9331};
+
+(*adsorption onto 1 wall surface*)
+rule[7]=(Thread[#->#]&)/@Table[i,{i,2*6^Range[0,5]}];
+
+rule[8]=Join[(Thread[#->#]&)[NestList[rotate6bit,14,5]],
+(Thread[#->#]&)[NestList[rotate6bit,74,5]],
+(Thread[#->#]&)[NestList[rotate6bit,434,2]]];
+
+rule[9]=Join[(Thread[#->#]&)[NestList[rotate6bit,86,5]],
+(Thread[#->#]&)[NestList[rotate6bit,15986,5]],
+(Thread[#->#]&)[NestList[rotate6bit,446,5]],
+(Thread[#->#]&)[NestList[rotate6bit,2666,1]]];
+
+rule[10]=Join[(Thread[#->#]&)[NestList[rotate6bit,518,5]],
+(Thread[#->#]&)[NestList[rotate6bit,2678,5]],
+(Thread[#->#]&)[NestList[rotate6bit,18228,2]]];
+
+rule[11]=(Thread[#->#]&)/@Table[i,{i,18662-2*6^Range[0,5]}];
+
+rule[12]={18662->18662};
+
+rule[13]=Join[(Thread[NestList[rotate6bit,8,5]->NestList[rotate6bit,8,5]]),
+(Thread[NestList[rotate6bit,38,5]->NestList[rotate6bit,38,5]]),
+(Thread[NestList[rotate6bit,1298,5]->NestList[rotate6bit,1298,5]]),
+(Thread[NestList[rotate6bit,7778,5]->NestList[rotate6bit,7778,5]])];
+
+rule[14]=Join[(Thread[NestList[rotate6bit,1334,5]->NestList[rotate6bit,1334,5]]),
+(Thread[NestList[rotate6bit,7784,5]->NestList[rotate6bit,7784,5]]),
+(Thread[NestList[rotate6bit,44,5]->NestList[rotate6bit,44,5]]),
+(Thread[NestList[rotate6bit,9074,5]->NestList[rotate6bit,9074,5]]),
+(Thread[NestList[rotate6bit,7814,5]->NestList[rotate6bit,7814,5]]),
+(Thread[NestList[rotate6bit,1304,5]->NestList[rotate6bit,1304,5]])];
+
+rule[15]=Join[
+(Thread[NestList[rotate6bit,1340,5]->NestList[rotate6bit,1336,5]]),
+(Thread[NestList[rotate6bit,7820,5]->NestList[rotate6bit,7786,5]]),
+(Thread[NestList[rotate6bit,9080,5]->NestList[rotate6bit,7786,5]]),
+(Thread[NestList[rotate6bit,9110,5]->NestList[rotate6bit,1336,5]])
+];
+
+rule[16]=(Thread[NestList[rotate6bit,9116,5]->NestList[rotate6bit,9116,5]]);
+
+rule[17]=Join[
+(Thread[NestList[rotate6bit,3,5]->NestList[rotate6bit,4,5]]),
+(Thread[NestList[rotate6bit,9,5]->NestList[rotate6bit,10,5]]),
+(Thread[NestList[rotate6bit,7779,5]->NestList[rotate6bit,7780,5]]),
+(Thread[NestList[rotate6bit,39,5]->NestList[rotate6bit,40,5]]),
+(Thread[NestList[rotate6bit,1299,5]->NestList[rotate6bit,1300,5]]),
+(Thread[NestList[rotate6bit,7785,5]->NestList[rotate6bit,7786,5]]),
+(Thread[NestList[rotate6bit,9075,5]->NestList[rotate6bit,9076,5]]),
+(Thread[NestList[rotate6bit,45,5]->NestList[rotate6bit,46,5]]),
+(Thread[NestList[rotate6bit,1305,5]->NestList[rotate6bit,7816,5]]),
+(Thread[NestList[rotate6bit,7815,5]->NestList[rotate6bit,1306,5]]),
+(Thread[NestList[rotate6bit,1335,5]->NestList[rotate6bit,8000,5]])
+];
+
+rule[18]=Join[
+(Thread[NestList[rotate6bit,9081,5]->NestList[rotate6bit,9082,5]]),
+(Thread[NestList[rotate6bit,9111,5]->NestList[rotate6bit,9112,5]]),
+(Thread[NestList[rotate6bit,7821,5]->NestList[rotate6bit,7822,5]]),
+(Thread[NestList[rotate6bit,1341,5]->NestList[rotate6bit,1342,5]])
+];
+
+rule[19]=(Thread[NestList[rotate6bit,9117,5]->NestList[rotate6bit,9118,5]]);
+(*incoming on adsorbed 1 walled*)
+rule[25]=(Thread[NestList[rotate6bit,4,5]->NestList[rotate6bit,4,5]]);
+
+rule[20]=Join[
+(Thread[NestList[rotate6bit,5,5]->NestList[rotate6bit,220,5]]),
+(Thread[NestList[rotate6bit,10,5]->NestList[rotate6bit,10,5]]),
+(Thread[NestList[rotate6bit,40,5]->NestList[rotate6bit,40,5]]),
+(Thread[NestList[rotate6bit,1300,5]->NestList[rotate6bit,1300,5]]),
+(Thread[NestList[rotate6bit,7780,5]->NestList[rotate6bit,7780,5]])
+];
+
+rule[21]=Join[
+(Thread[NestList[rotate6bit,11,5]->NestList[rotate6bit,226,5]]),
+(Thread[NestList[rotate6bit,41,5]->NestList[rotate6bit,256,5]]),
+(Thread[NestList[rotate6bit,1301,5]->NestList[rotate6bit,1516,5]]),
+(Thread[NestList[rotate6bit,7781,5]->NestList[rotate6bit,7996,5]]),
+(Thread[NestList[rotate6bit,7786,5]->NestList[rotate6bit,7786,5]]),
+(Thread[NestList[rotate6bit,1336,5]->NestList[rotate6bit,1336,5]]),
+(Thread[NestList[rotate6bit,9076,5]->NestList[rotate6bit,9076,5]]),
+(Thread[NestList[rotate6bit,46,5]->NestList[rotate6bit,46,5]]),
+(Thread[NestList[rotate6bit,1306,5]->NestList[rotate6bit,1306,5]]),
+(Thread[NestList[rotate6bit,7816,5]->NestList[rotate6bit,7816,5]])
+];
+
+rule[22]=Join[
+(Thread[NestList[rotate6bit,7817,5]->NestList[rotate6bit,8002,5]]),
+(Thread[NestList[rotate6bit,1307,5]->NestList[rotate6bit,8002,5]]),
+(Thread[NestList[rotate6bit,1337,5]->NestList[rotate6bit,8002,5]]),
+(Thread[NestList[rotate6bit,7787,5]->NestList[rotate6bit,8002,5]]),
+(Thread[NestList[rotate6bit,9077,5]->NestList[rotate6bit,9292,5]]),
+(Thread[NestList[rotate6bit,47,5]->NestList[rotate6bit,262,5]]),
+(Thread[NestList[rotate6bit,7822,5]->NestList[rotate6bit,1522,5]]),
+(Thread[NestList[rotate6bit,1342,5]->NestList[rotate6bit,8032,5]]),
+(Thread[NestList[rotate6bit,9112,5]->NestList[rotate6bit,1522,5]]),
+(Thread[NestList[rotate6bit,9082,5]->NestList[rotate6bit,8032,5]])
+];
+
+rule[23]=Join[
+(Thread[NestList[rotate6bit,9118,5]->NestList[rotate6bit,9118,5]]),
+(Thread[NestList[rotate6bit,9113,5]->NestList[rotate6bit,9328,5]]),
+(Thread[NestList[rotate6bit,1343,5]->NestList[rotate6bit,1558,5]]),
+(Thread[NestList[rotate6bit,9083,5]->NestList[rotate6bit,9298,5]]),
+(Thread[NestList[rotate6bit,7823,5]->NestList[rotate6bit,8038,5]])
+];
+
+rule[24]=(Thread[NestList[rotate6bit,9119,5]->NestList[rotate6bit,9334,5]]);
+(*two walled*)
+(*1st class*)
+rule[26]=Join[
+(Thread[NestList[rotate6bit,15,5]->NestList[rotate6bit,28,5]]),
+(Thread[NestList[rotate6bit,20,5]->NestList[rotate6bit,28,5]]),
+(Thread[NestList[rotate6bit,50,5]->NestList[rotate6bit,50,5]]),
+(Thread[NestList[rotate6bit,7790,5]->NestList[rotate6bit,7790,5]])
+];
+
+rule[27]=Join[
+(Thread[NestList[rotate6bit,7826,5]->NestList[rotate6bit,7826,5]]),
+(Thread[NestList[rotate6bit,21,5]->NestList[rotate6bit,244,5]]),
+(Thread[NestList[rotate6bit,51,5]->NestList[rotate6bit,64,5]]),
+(Thread[NestList[rotate6bit,7791,5]->NestList[rotate6bit,7804,5]]),
+(Thread[NestList[rotate6bit,56,5]->NestList[rotate6bit,64,5]]),
+(Thread[NestList[rotate6bit,7796,5]->NestList[rotate6bit,7804,5]])
+];
+
+rule[28]=Join[
+(Thread[NestList[rotate6bit,57,5]->NestList[rotate6bit,280,5]]),
+(Thread[NestList[rotate6bit,7797,5]->NestList[rotate6bit,9100,5]]),
+(Thread[NestList[rotate6bit,7827,5]->NestList[rotate6bit,1540,5]]),
+(Thread[NestList[rotate6bit,7832,5]->NestList[rotate6bit,1540,5]])
+];
+
+rule[29]=(Thread[NestList[rotate6bit,7833,5]->NestList[rotate6bit,8056,5]]);
+(*2nd class*)
+rule[30]=Join[
+(Thread[NestList[rotate6bit,80,5]->NestList[rotate6bit,80,5]]),
+(Thread[NestList[rotate6bit,1370,5]->NestList[rotate6bit,1370,5]]),
+(Thread[NestList[rotate6bit,75,5]->NestList[rotate6bit,148,5]]),
+(Thread[NestList[rotate6bit,110,5]->NestList[rotate6bit,148,5]])
+];
+
+rule[31]=Join[
+(Thread[NestList[rotate6bit,1376,5]->NestList[rotate6bit,1376,5]]),
+(Thread[NestList[rotate6bit,81,5]->NestList[rotate6bit,154,5]]),
+(Thread[NestList[rotate6bit,116,5]->NestList[rotate6bit,154,5]]),
+(Thread[NestList[rotate6bit,111,5]->NestList[rotate6bit,1444,5]]),
+(Thread[NestList[rotate6bit,1371,5]->NestList[rotate6bit,1444,5]]),
+(Thread[NestList[rotate6bit,1406,5]->NestList[rotate6bit,1444,5]])
+];
+
+rule[32]=Join[
+(Thread[NestList[rotate6bit,1407,5]->NestList[rotate6bit,8109,5]]),
+(Thread[NestList[rotate6bit,117,5]->NestList[rotate6bit,8140,5]]),
+(Thread[NestList[rotate6bit,1377,5]->NestList[rotate6bit,8140,5]]),
+(Thread[NestList[rotate6bit,1412,5]->NestList[rotate6bit,8140,5]])
+];
+
+rule[33]=(Thread[NestList[rotate6bit,1413,5]->NestList[rotate6bit,8146,5]]);
+(*3rd class*)
+rule[34]=Join[
+(Thread[NestList[rotate6bit,440,5]->NestList[rotate6bit,440,5]]),
+(Thread[NestList[rotate6bit,470,5]->NestList[rotate6bit,470,5]])
+];
+
+rule[35]=Join[
+(Thread[NestList[rotate6bit,476,5]->NestList[rotate6bit,476,5]]),
+(Thread[NestList[rotate6bit,1766,5]->NestList[rotate6bit,1766,5]]),
+(Thread[NestList[rotate6bit,1736,2]->NestList[rotate6bit,1736,2]]),
+(Thread[NestList[rotate6bit,8246,2]->NestList[rotate6bit,8246,2]])
+];
+
+rule[36]=Join[
+(Thread[NestList[rotate6bit,8252,5]->NestList[rotate6bit,910,5]]),
+(Thread[NestList[rotate6bit,1772,5]->NestList[rotate6bit,910,5]])
+];
+
+rule[37]=(Thread[NestList[rotate6bit,9548,2]->NestList[rotate6bit,9548,2]]);
+(*three walled*)
+rule[38]=Join[
+(Thread[NestList[rotate6bit,87,5]->NestList[rotate6bit,172,5]]),
+(Thread[NestList[rotate6bit,92,5]->NestList[rotate6bit,172,5]]),
+(Thread[NestList[rotate6bit,122,5]->NestList[rotate6bit,172,5]])
+];
+
+rule[39]=Join[
+(Thread[NestList[rotate6bit,93,5]->NestList[rotate6bit,388,5]]),
+(Thread[NestList[rotate6bit,123,5]->NestList[rotate6bit,1468,5]]),
+(Thread[NestList[rotate6bit,128,5]->NestList[rotate6bit,7948,5]])
+];
+
+rule[40]=(Thread[NestList[rotate6bit,129,5]->NestList[rotate6bit,8164,5]]);
+
+rule[41]=Join[
+(Thread[NestList[rotate6bit,23762,5]->NestList[rotate6bit,31972,5]]),
+(Thread[NestList[rotate6bit,15992,5]->NestList[rotate6bit,15992,5]]),
+(Thread[NestList[rotate6bit,17282,5]->NestList[rotate6bit,17282,5]])
+];
+
+rule[42]=Join[
+(Thread[NestList[rotate6bit,17288,5]->NestList[rotate6bit,17288,5]]),
+(Thread[NestList[rotate6bit,25058,5]->NestList[rotate6bit,33268,5]]),
+(Thread[NestList[rotate6bit,23768,5]->NestList[rotate6bit,31978,5]])
+];
+
+rule[43]=(Thread[NestList[rotate6bit,25064,5]->NestList[rotate6bit,33304,5]]);
+
+rule[44]=Join[
+(Thread[NestList[rotate6bit,452,5]->NestList[rotate6bit,892,5]]),
+(Thread[NestList[rotate6bit,482,5]->NestList[rotate6bit,482,5]]),
+(Thread[NestList[rotate6bit,8222,5]->NestList[rotate6bit,8222,5]])
+];
+
+rule[45]=Join[
+(Thread[NestList[rotate6bit,488,5]->NestList[rotate6bit,928,5]]),
+(Thread[NestList[rotate6bit,8228,5]->NestList[rotate6bit,8668,5]]),
+(Thread[NestList[rotate6bit,8258,5]->NestList[rotate6bit,8258,5]])
+];
+
+rule[46]=(Thread[NestList[rotate6bit,8264,5]->NestList[rotate6bit,2224,5]]);
+
+rule[47]=Join[
+(Thread[NestList[rotate6bit,2667,5]->NestList[rotate6bit,5332,5]]),
+(Thread[NestList[rotate6bit,2703,5]->NestList[rotate6bit,5338,5]]),
+(Thread[NestList[rotate6bit,3999,1]->NestList[rotate6bit,10664,1]])
+];
+(*four walled*)
+rule[48]=Join[
+(Thread[NestList[rotate6bit,524,5]->NestList[rotate6bit,1036,5]]),
+(Thread[NestList[rotate6bit,554,5]->NestList[rotate6bit,1036,5]]),
+(Thread[NestList[rotate6bit,560,5]->NestList[rotate6bit,2332,5]])
+];
+
+rule[49]=Join[
+(Thread[NestList[rotate6bit,2679,5]->NestList[rotate6bit,5356,5]]),
+(Thread[NestList[rotate6bit,2714,5]->NestList[rotate6bit,5356,5]]),
+(Thread[NestList[rotate6bit,2715,5]->NestList[rotate6bit,13132,5]])
+];
+
+rule[50]=Join[
+(Thread[NestList[rotate6bit,18444,5]->NestList[rotate6bit,18444,5]]),
+(Thread[NestList[rotate6bit,18445,2]->NestList[rotate6bit,18445,2]])
+];
+(*five walled*)
+
+rule[51]=(Thread[NestList[rotate6bit,18876,5]->NestList[rotate6bit,37320,5]]);
+
+(*incoming on adsorbed 2 walled*)
+rule[52]=Join[
+(Thread[NestList[rotate6bit,28,5]->NestList[rotate6bit,28,5]]),
+(Thread[NestList[rotate6bit,148,5]->NestList[rotate6bit,148,5]]),
+(Thread[NestList[rotate6bit,868,2]->NestList[rotate6bit,868,2]])
+];
+
+rule[53]=Join[
+(Thread[NestList[rotate6bit,7804,5]->NestList[rotate6bit,7804,5]]),
+(Thread[NestList[rotate6bit,64,5]->NestList[rotate6bit,64,5]]),
+(Thread[NestList[rotate6bit,34,5]->NestList[rotate6bit,1324,5]]),
+(Thread[NestList[rotate6bit,29,5]->NestList[rotate6bit,244,5]])
+];
+
+rule[54]=Join[
+(Thread[NestList[rotate6bit,7840,5]->NestList[rotate6bit,7840,5]]),
+(Thread[NestList[rotate6bit,35,5]->NestList[rotate6bit,1540,5]]),
+(Thread[NestList[rotate6bit,7805,5]->NestList[rotate6bit,8020,5]]),
+(Thread[NestList[rotate6bit,70,5]->NestList[rotate6bit,1360,5]]),
+(Thread[NestList[rotate6bit,7810,5]->NestList[rotate6bit,9100,5]]),
+(Thread[NestList[rotate6bit,65,5]->NestList[rotate6bit,280,5]])
+];
+
+rule[55]=Join[
+(Thread[NestList[rotate6bit,7841,5]->NestList[rotate6bit,1576,5]]),
+(Thread[NestList[rotate6bit,7846,5]->NestList[rotate6bit,9316,5]]),
+(Thread[NestList[rotate6bit,7811,5]->NestList[rotate6bit,9316,5]]),
+(Thread[NestList[rotate6bit,71,5]->NestList[rotate6bit,1576,5]])
+];
+
+rule[56]=(Thread[NestList[rotate6bit,7847,5]->NestList[rotate6bit,9352,5]]);
+
+rule[57]=Join[
+(Thread[NestList[rotate6bit,1444,5]->NestList[rotate6bit,1444,5]]),
+(Thread[NestList[rotate6bit,154,5]->NestList[rotate6bit,154,5]]),
+(Thread[NestList[rotate6bit,184,5]->NestList[rotate6bit,7924,5]]),
+(Thread[NestList[rotate6bit,149,5]->NestList[rotate6bit,364,5]])
+];
+
+rule[58]=Join[
+(Thread[NestList[rotate6bit,1450,5]->NestList[rotate6bit,1450,5]]),
+(Thread[NestList[rotate6bit,1445,5]->NestList[rotate6bit,1660,5]]),
+(Thread[NestList[rotate6bit,1480,5]->NestList[rotate6bit,9220,5]]),
+(Thread[NestList[rotate6bit,190,5]->NestList[rotate6bit,7930,5]]),
+(Thread[NestList[rotate6bit,155,5]->NestList[rotate6bit,370,5]]),
+(Thread[NestList[rotate6bit,185,5]->NestList[rotate6bit,8140,5]])
+];
+
+rule[59]=Join[
+(Thread[NestList[rotate6bit,191,5]->NestList[rotate6bit,8146,5]]),
+(Thread[NestList[rotate6bit,1486,5]->NestList[rotate6bit,9436,5]]),
+(Thread[NestList[rotate6bit,1481,5]->NestList[rotate6bit,8146,5]]),
+(Thread[NestList[rotate6bit,1451,5]->NestList[rotate6bit,9436,5]])
+];
+
+rule[60]=(Thread[NestList[rotate6bit,1487,5]->NestList[rotate6bit,9442,5]]);
+
+rule[61]=Join[
+(Thread[NestList[rotate6bit,8644,5]->NestList[rotate6bit,8644,5]]),
+(Thread[NestList[rotate6bit,2164,5]->NestList[rotate6bit,2164,5]]),
+(Thread[NestList[rotate6bit,2170,2]->NestList[rotate6bit,2170,2]]),
+(Thread[NestList[rotate6bit,8680,2]->NestList[rotate6bit,8680,2]]),
+(Thread[NestList[rotate6bit,9940,5]->NestList[rotate6bit,9940,5]]),
+(Thread[NestList[rotate6bit,8650,5]->NestList[rotate6bit,8650,5]])
+];
+
+rule[62]=Join[
+(Thread[NestList[rotate6bit,9946,5]->NestList[rotate6bit,9946,5]]),
+(Thread[NestList[rotate6bit,8686,5]->NestList[rotate6bit,8686,5]]),
+(Thread[NestList[rotate6bit,9982,2]->NestList[rotate6bit,9982,2]])
+];
+
+(*incoming on adsorbed 3 walled*)
+rule[63]=Join[
+(Thread[NestList[rotate6bit,172,5]->NestList[rotate6bit,172,5]]),
+(Thread[NestList[rotate6bit,31972,5]->NestList[rotate6bit,31972,5]]),
+(Thread[NestList[rotate6bit,892,5]->NestList[rotate6bit,892,5]]),
+(Thread[NestList[rotate6bit,5332,1]->NestList[rotate6bit,5332,1]])
+];
+
+rule[64]=Join[
+(Thread[NestList[rotate6bit,173,5]->NestList[rotate6bit,388,5]]),
+(Thread[NestList[rotate6bit,178,5]->NestList[rotate6bit,1468,5]]),
+(Thread[NestList[rotate6bit,208,5]->NestList[rotate6bit,7948,5]])
+];
+
+rule[65]=Join[
+(Thread[NestList[rotate6bit,214,5]->NestList[rotate6bit,9244,5]]),
+(Thread[NestList[rotate6bit,179,5]->NestList[rotate6bit,1684,5]]),
+(Thread[NestList[rotate6bit,209,5]->NestList[rotate6bit,8164,5]]),
+(Thread[NestList[rotate6bit,215,5]->NestList[rotate6bit,9460,5]])
+];
+
+rule[66]=Join[
+(Thread[NestList[rotate6bit,31978,5]->NestList[rotate6bit,31978,5]]),
+(Thread[NestList[rotate6bit,33268,5]->NestList[rotate6bit,33268,5]]),
+(Thread[NestList[rotate6bit,39748,5]->NestList[rotate6bit,32008,5]])
+];
+
+rule[67]=Join[
+(Thread[NestList[rotate6bit,41044,5]->NestList[rotate6bit,33304,5]]),
+(Thread[NestList[rotate6bit,39754,5]->NestList[rotate6bit,32014,5]]),
+(Thread[NestList[rotate6bit,33274,5]->NestList[rotate6bit,33274,5]]),
+(Thread[NestList[rotate6bit,41050,5]->NestList[rotate6bit,33310,5]])
+];
+
+rule[68]=Join[
+(Thread[NestList[rotate6bit,898,5]->NestList[rotate6bit,2188,5]]),
+(Thread[NestList[rotate6bit,8668,5]->NestList[rotate6bit,8668,5]]),
+(Thread[NestList[rotate6bit,928,5]->NestList[rotate6bit,928,5]])
+];
+
+rule[69]=Join[
+(Thread[NestList[rotate6bit,8704,5]->NestList[rotate6bit,8704,5]]),
+(Thread[NestList[rotate6bit,934,5]->NestList[rotate6bit,2224,5]]),
+(Thread[NestList[rotate6bit,8674,5]->NestList[rotate6bit,9964,5]]),
+(Thread[NestList[rotate6bit,8710,5]->NestList[rotate6bit,10000,5]])
+];
+
+rule[70]=Join[
+(Thread[NestList[rotate6bit,5333,5]->NestList[rotate6bit,5548,5]]),
+(Thread[NestList[rotate6bit,5369,5]->NestList[rotate6bit,13324,5]]),
+(Thread[NestList[rotate6bit,6665,1]->NestList[rotate6bit,13330,1]])
+];
+
+(*incoming on adsorbed 4 walled*)
+rule[71]=Join[
+(Thread[NestList[rotate6bit,1036,5]->NestList[rotate6bit,1036,5]]),
+(Thread[NestList[rotate6bit,5356,5]->NestList[rotate6bit,5356,5]]),
+(Thread[NestList[rotate6bit,1072,5]->NestList[rotate6bit,8812,5]]),
+(Thread[NestList[rotate6bit,1042,5]->NestList[rotate6bit,2332,5]]),
+(Thread[NestList[rotate6bit,1078,5]->NestList[rotate6bit,10108,5]])
+];
+
+rule[72]=Join[
+(Thread[NestList[rotate6bit,5357,5]->NestList[rotate6bit,5572,5]]),
+(Thread[NestList[rotate6bit,5392,5]->NestList[rotate6bit,13132,5]]),
+(Thread[NestList[rotate6bit,5393,5]->NestList[rotate6bit,13348,5]])
+];
+
+(*incoming on adsorbed 5 walled*)
+rule[73]=Join[
+(Thread[NestList[rotate6bit,37320,5]->NestList[rotate6bit,37320,5]]),
+(Thread[NestList[rotate6bit,37536,5]->NestList[rotate6bit,37321,5]])
+];
+
+interactionRules6bit=Sort[Join@@Array[rule,74,0]];
+
+SequenceDelayed[a___] := Sequence[a];
+
+interactionswithrandreflection[adPotential_,dePotential_] := 
+	interactionRules6bit/. 
+	{Verbatim[Rule][a_,b_] /; MemberQ[IntegerDigits[b,6,6],4] && ! MemberQ[IntegerDigits[a,6,6],4|5]:> 
+With[{pos= Position[IntegerDigits[a,6,6],3]},
+	SequenceDelayed[a /; RandomReal[] <adPotential -> b, 
+		a -> FromDigits[ReplacePart[IntegerDigits[a,6,6],{pos -> 2, Mod[pos-3,6,1] -> 1} ],6]]],
+
+Verbatim[Rule][a_,b_] /; MemberQ[IntegerDigits[a,6,6],4]&& 
+!MemberQ[IntegerDigits[a,6,6],1]&&!MemberQ[IntegerDigits[a,6,6],5]:> 
+With[{pos4= Position[IntegerDigits[a,6,6],4],pos1=Position[IntegerDigits[a,6,6],0]},
+	SequenceDelayed[a /; RandomReal[] <dePotential -> FromDigits[
+	ReplacePart[IntegerDigits[a,6,6],{pos4 -> 2, RandomChoice[pos1] -> 1} ],6],a -> b
+]]};
+
+adsorptionPotential=0.5;
+desorptionPotential=0.5;
+Manipulate[
+wallSunPlot6bit[interactionswithrandreflection[adsorptionPotential,desorptionPotential][[i]]], 
+{i,1,Length[interactionswithrandreflection[adsorptionPotential,desorptionPotential]],1,AnimationRate->6}
+]
+
+
+SixBitMask[n_, mask:{(0|1)..}, d_:6] := 
+FromDigits[Replace[IntegerDigits[n, d, Length[mask]], Except[1] -> 0, {1}] * mask,d]
+
+masks =IntegerDigits[{{32,16,0},{1,0,8},{0,2,4}},2,6];
+
+evenPart[n_] := FromDigits[Replace[IntegerDigits[n, 6, 6], 1 -> 0, {1}],6]
+
+(*adsorption potential is defaultly set as 0.8*)
+(*singleStepexperimental= Function[{a,n}, If[Mod[n,2]\[Equal]1,
+	Replace[a[[2,2]], interactionswithrandreflection[.8]],
+	evenPart[a[[2,2]]] + Apply[Plus, MapThread[SixBitMask[#1,#2,6]&,{a,masks},2],{0,1}]
+]];*)
+
+singleStepexperimental[adPoten_:0.5,dePoten_:0.5]:= 
+With[{rule=Dispatch[interactionswithrandreflection[adPoten,dePoten]]},
+	Function[{a,n}, 
+		If[Mod[n,2]==1,
+		Replace[a[[2,2]],rule],
+		evenPart[a[[2,2]]] + Apply[Plus, MapThread[SixBitMask[#1,#2,6]&,{a,masks},2],{0,1}]]
+	]
+];
+
+gasInitial[size_Integer,margin_Integer]:=
+With[
+{gas=Map[FromDigits[#,6]&,IntegerDigits[RandomInteger[{0,63},{size,size}],2],{2}]},
+PadLeft[gas,{size+2margin,size+2margin},0,{2margin-1,2margin}]];
+
+freeFluid6bit@gasInitial[5, 3]
+
+wallInitial[height_Integer,width_Integer,space_Integer,{marginHeight_Integer,marginWidth_Integer}]:=
+With[{
+wall=Map[FromDigits[#,6]&,
+2IntegerDigits[RandomChoice[{0,surface},{height,width}]/.{surface:>RandomInteger[{0,63}]},2],{2}]},
+PadLeft[wall,{space,space},0,{marginHeight,marginWidth}]]
+
+filter4wall[data_]:=Apply[Plus,BitAnd[{{32,16,0},{1,0,8},{0,2,4}},data],{0,1}];
+
+filterwall[data_]:=
+FromDigits[2BitOr[RotateLeft[
+IntegerDigits[filter4wall[Map[
+FromDigits[#,2]&,IntegerDigits[data,6,6]/2,{2}]],2,6],3],IntegerDigits[data[[2,2]],6,6]/2],6]
+
+wallMasks=Function[filterwall[#]];
+
+freeFluid6bit@wallInitial[10, 10, 11, {0, 0}]
+
+adsorpInitial[gasSize_Integer,margin_Integer,
+{surfaceHeight_Integer,surfaceWidth_Integer},
+{marginHeight_Integer,marginWidth_Integer}]:=
+gasInitial[gasSize,margin]+
+CellularAutomaton[{wallMasks,{},{1,1}},
+wallInitial[surfaceHeight,surfaceWidth,gasSize+2margin,{marginHeight,marginWidth}],{{{1}}}];
+adsorpInitial::usage="\!\(\*
+StyleBox[\"adsorpInitial\",\nFontSize->14,\nFontColor->RGBColor[0, 0, 1]]\)[\!\(\*
+StyleBox[\"gasSize\", \"TI\"]\), \!\(\*
+StyleBox[\"margin\", \"TI\"]\), {\!\(\*
+StyleBox[\"surfaceHeight\", \"TI\"]\), \!\(\*
+StyleBox[\"surfaceWidth\", \"TI\"]\)}, {\!\(\*
+StyleBox[\"marginHeight\", \"TI\"]\), \!\(\*
+StyleBox[\"marginWidth\", \"TI\"]\)}]";
+
+(adsorpEmulation = 
+   adsorpInitial[5, 10, {15, 15}, {0, 0}]) // freeFluid6bit
+   
+   
+adEvolution[{adsorpPotential_:0.5,desorpPotential_:0.5},initial_?MatrixQ,step_Integer:20]:=
+CellularAutomaton[
+	{singleStepexperimental[adsorpPotential,desorpPotential], {}, {1, 1}}, 
+	initial,
+	step
+];
+
+emul=adEvolution[{.5,.05},adsorpEmulation,1500];
+
+ListAnimate[freeFluid6bit/@emul[[1;;150]](*adEvolution[.9,.1][[1;;501]]*),ImageSize->All,AnimationRate->2]
+
+ListAnimate[freeFluid6bit/@emul[[500;;1000]](*adEvolution[.9,.1][[1;;501]]*),ImageSize->All,AnimationRate->2]
+
+ListAnimate[freeFluid6bit/@emul[[1000;;1500]](*adEvolution[.9,.1][[1;;501]]*),ImageSize->All,AnimationRate->2]
